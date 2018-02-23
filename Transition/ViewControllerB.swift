@@ -25,10 +25,14 @@ class ViewControllerB: UIViewController {
 
   let rootView: UIView = {
     let view = UIView()
-    view.backgroundColor = .lightGray
+    view.backgroundColor = .white
 
     return view
   }()
+
+  override var preferredStatusBarStyle: UIStatusBarStyle {
+    return .lightContent
+  }
 
   override func loadView() {
     rootView.addSubview(label)
@@ -51,6 +55,8 @@ class ViewControllerB: UIViewController {
   }
 
   @objc func didTapDismissButton(sender: Any) {
-    presentingViewController?.dismiss(animated: true)
+    presentingViewController?.dismiss(animated: true) {
+      print("Finished dismissing")
+    }
   }
 }
