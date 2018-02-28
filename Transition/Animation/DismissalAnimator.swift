@@ -6,34 +6,45 @@
 import UIKit
 
 class DismissalAnimator: NSObject, UIViewControllerAnimatedTransitioning {
+  private var presentationController: PresentationController?
+
+  init(presentationController: PresentationController?) {
+    self.presentationController = presentationController
+    super.init()
+  }
+
   func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-    return 0.375
+    return 0.25
   }
 
   func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
     let containerView = transitionContext.containerView
 
     guard let dismissedView = transitionContext.view(forKey: .from) else {
-      print("Unable to find view being dismissed")
       return
     }
 
     guard let returningToViewController = transitionContext.viewController(forKey: .to),
           let returningToView = returningToViewController.view else {
-      print("Unable to find view to return to")
       return
     }
 
+    let duration = transitionDuration(using: transitionContext)
+
+    var height = returningToView.frame.height
+
+
+    if let root = returningToViewController as? RootViewController {
+      height = root.navController.view.frame.height + 4
+    }
+
+    presentationController?.updateSnapshot()
     let dismissedViewFinalFrame = CGRect(
       x: 0.0,
-      y: containerView.frame.size.height,
+      y: height,
       width: returningToView.frame.size.width,
       height: returningToView.frame.size.height
     )
-
-    let duration = transitionDuration(using: transitionContext)
-    print("Animating \(dismissedView) to \(dismissedViewFinalFrame) with duration: \(duration)")
-
 
     UIView.animate(
       withDuration: duration,
@@ -41,13 +52,15 @@ class DismissalAnimator: NSObject, UIViewControllerAnimatedTransitioning {
         dismissedView.frame = dismissedViewFinalFrame
       },
       completion: { _ in
-        if (transitionContext.transitionWasCancelled) {
-          print("transition was cancelled, removing view we were trying to return to")
-        }
+        let onscreen = CGRect(
+          x: containerView.frame.minX,
+          y: returningToView.frame.origin.y,
+          width: returningToView.frame.width,
+          height: returningToView.frame.height
+        )
+        returningToView.layer.cornerRadius = 0.0
+        returningToView.frame = onscreen
 
-        returningToView.isHidden = false
-
-        print("transition complete")
         transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
       }
     )

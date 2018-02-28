@@ -19,18 +19,27 @@ class PresentationController: UIPresentationController {
 
   private let dimmingOverlay: UIView = {
     let view = UIView()
-    view.backgroundColor = UIColor(white: 0.0, alpha: 0.4)
+    view.backgroundColor = UIColor(white: 0.0, alpha: 0.1)
     view.alpha = 0.0
 
     return view
   }()
 
+  static var count: CGFloat = 0.0
   override var frameOfPresentedViewInContainerView: CGRect {
+    defer {
+      PresentationController.count += 1
+    }
     guard let containerBounds = containerView?.bounds else {
       fatalError("woops, no container view")
     }
 
-    let margin: CGFloat = 48.0
+    let margin: CGFloat
+    if presentingViewController is RootViewController {
+      margin = 38
+    } else {
+      margin = 44
+    }
 
     return CGRect(
       x: containerBounds.origin.x,
@@ -41,6 +50,8 @@ class PresentationController: UIPresentationController {
   }
 
   override func presentationTransitionWillBegin() {
+
+
     guard let container = containerView else {
       return
     }
@@ -53,42 +64,47 @@ class PresentationController: UIPresentationController {
     dimmingOverlay.frame = container.bounds
     dimmingOverlay.alpha = 0.0
     container.insertSubview(dimmingOverlay, at: 1)
-    coordinator.animate(alongsideTransition: { context in
+    coordinator.animate(alongsideTransition: {
+      context in
       self.dimmingOverlay.alpha = 1.0
     })
 
-    guard let snapshotView = presentingViewController.view.snapshotView(afterScreenUpdates: false) else {
-      return
-    }
-
-    snapshotWrapper.subviews.forEach { view in
-      view.removeFromSuperview()
-    }
-    snapshotWrapper.frame = presentingViewController.view.bounds
-    snapshotWrapper.addSubview(snapshotView)
+    updateSnapshot()
+    snapshotWrapper.frame = presentingViewController.view.frame
     container.insertSubview(snapshotWrapper, at: 0)
 
-    coordinator.animate(alongsideTransition: { context in
-      self.snapshotWrapper.layer.cornerRadius = 10.0
-      self.snapshotWrapper.transform = CGAffineTransform.scaledBy(.identity)(x: 0.925, y: 0.925)
+    let scale = CGAffineTransform.scaledBy(.identity)(x: 0.925, y: 0.925)
+    let translation: CGAffineTransform
+
+    if presentingViewController is RootViewController {
+      translation = scale
+    } else {
+      translation = CGAffineTransform.translatedBy(scale)(x: -0.0, y: -32.0)
+    }
+
+    coordinator.animate(alongsideTransition: {
+      context in
+      self.snapshotWrapper.transform = translation
     })
   }
 
   override func presentationTransitionDidEnd(_ completed: Bool) {
     if (!completed) {
-      print("didn't complete, removing")
       dimmingOverlay.removeFromSuperview()
       snapshotWrapper.removeFromSuperview()
     }
   }
 
   override func dismissalTransitionWillBegin() {
+    updateSnapshot()
+
     guard let coordinator = presentedViewController.transitionCoordinator else {
       dimmingOverlay.alpha = 0.0
       return
     }
 
-    coordinator.animate(alongsideTransition: { context in
+    coordinator.animate(alongsideTransition: {
+      context in
       self.dimmingOverlay.alpha = 0.0
       self.snapshotWrapper.layer.cornerRadius = 0.0
       self.snapshotWrapper.transform = CGAffineTransform.identity
@@ -100,5 +116,16 @@ class PresentationController: UIPresentationController {
       dimmingOverlay.removeFromSuperview()
       snapshotWrapper.removeFromSuperview()
     }
+  }
+
+  func updateSnapshot() {
+    guard let snapshotView = presentingViewController.view.snapshotView(afterScreenUpdates: true) else {
+      return
+    }
+    snapshotWrapper.subviews.forEach {
+      view in
+      view.removeFromSuperview()
+    }
+    snapshotWrapper.addSubview(snapshotView)
   }
 }

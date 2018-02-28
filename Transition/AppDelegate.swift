@@ -12,19 +12,26 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
   var window: UIWindow?
+  let animationController = NavigationAnimationController()
+  let transitioningDelegate = TransitioningDelegate()
 
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?
   ) -> Bool {
     window = UIWindow()
-    let navigationController = UINavigationController(rootViewController: RootViewController())
-//    navigationController.navigationBar.prefersLargeTitles = true
-    window?.rootViewController = navigationController
+
+    let navController = UINavigationController(
+      rootViewController: ListViewController(items: ListItems.all)
+    )
+    navController.navigationBar.prefersLargeTitles = true
+    navController.transitioningDelegate = transitioningDelegate
+    navController.delegate = animationController
+
+    window?.rootViewController = navController
     window?.makeKeyAndVisible()
 
     return true
   }
-
 }
 
