@@ -5,7 +5,7 @@
 
 import UIKit
 
-class ListItemViewController: UIViewController {
+class ListItemViewController: CardViewController {
   private let item: ListItem
   weak var rootViewController: RootViewController?
 
@@ -97,7 +97,7 @@ class ListItemViewController: UIViewController {
   }
 
   @objc func didTapDoneButton(sender: Any) {
-    navigationController?.popViewController(animated: true)
+    cardStackViewController?.pop()
   }
 
   @objc func didTapStashButton(sender: Any) {
@@ -105,16 +105,7 @@ class ListItemViewController: UIViewController {
 
   @objc func didTapOpenButton(sender: Any) {
     let itemVC = ListItemViewController(item: ListItems.random)
-    navigationController?.pushViewController(itemVC, animated: true)
+    cardStackViewController?.push(itemVC)
   }
 
-  override func viewWillAppear(_ animated: Bool) {
-    navigationController?.isNavigationBarHidden = true
-    super.viewWillAppear(animated)
-  }
-
-  override func viewWillDisappear(_ animated: Bool) {
-    navigationController?.isNavigationBarHidden = false
-    super.viewWillDisappear(animated)
-  }
 }

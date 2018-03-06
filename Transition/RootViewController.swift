@@ -5,26 +5,13 @@
 
 import UIKit
 
+class CardViewController: UIViewController {
+  weak var cardStackViewController: RootViewController?
+}
+
 class RootViewController: UIViewController {
-  enum StashMode {
-    case none
-    case pending
-    case stashed
-  }
-
-  let navController: UINavigationController
   let listViewController: ListViewController
-  var navControllerBottomConstraint: NSLayoutConstraint
-
   let cardTransitionDelegate = TransitioningDelegate()
-  let stashTransitionDelegate = StashTransitioningDelegate()
-
-  let stashedItemTapRecognizer: UIGestureRecognizer
-  var stashedItem: ListItem?
-
-  private var visibleStashConstraints: [NSLayoutConstraint]
-  private var noStashConstraints: [NSLayoutConstraint]
-  private var pendingStashConstraints: [NSLayoutConstraint]
 
   required init?(coder: NSCoder) {
     fatalError("Unable to initialize from nib")
@@ -32,62 +19,8 @@ class RootViewController: UIViewController {
 
   override init(nibName nibNameOrNil: String?, bundle bundleOrNil: Bundle?) {
     listViewController = ListViewController(items: ListItems.all)
-    navController = UINavigationController(rootViewController: listViewController)
-    navController.navigationBar.prefersLargeTitles = true
-    navController.view.clipsToBounds = true
-
-    stashedItemTapRecognizer = UITapGestureRecognizer()
-    navControllerBottomConstraint = NSLayoutConstraint()
-
-    visibleStashConstraints = [
-      stashedItemView.layoutMarginsGuide.topAnchor.constraint(equalTo: stashedItemLabel.topAnchor),
-      stashedItemView.topAnchor.constraint(equalTo: navController.view.bottomAnchor, constant: 4.0),
-      stashedItemView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor),
-      stashedItemView.leftAnchor.constraint(equalTo: navController.view.leftAnchor),
-      stashedItemView.rightAnchor.constraint(equalTo: navController.view.rightAnchor),
-
-      stashedItemLabel.bottomAnchor.constraint(equalTo: rootView.safeAreaLayoutGuide.bottomAnchor, constant: -8.0),
-      stashedItemLabel.centerXAnchor.constraint(equalTo: rootView.centerXAnchor)
-    ]
-
-    noStashConstraints = [
-      navController.view.bottomAnchor.constraint(equalTo: rootView.bottomAnchor),
-    ]
-
-    pendingStashConstraints = [
-      navController.view.bottomAnchor.constraint(equalTo: rootView.bottomAnchor, constant: -44.0),
-    ]
-
     super.init(nibName: nibNameOrNil, bundle: bundleOrNil)
-
-    stashedItemTapRecognizer.addTarget(self, action: #selector(didTapStashedItem))
-    stashedItemView.addGestureRecognizer(stashedItemTapRecognizer)
-    listViewController.rootViewController = self
-  }
-
-  var stashMode: StashMode = .none {
-    didSet {
-      NSLayoutConstraint.deactivate(noStashConstraints)
-      NSLayoutConstraint.deactivate(pendingStashConstraints)
-      NSLayoutConstraint.deactivate(visibleStashConstraints)
-
-      switch stashMode {
-      case .none:
-        NSLayoutConstraint.activate(noStashConstraints)
-        stashedItemView.isHidden = true
-        navController.view.layer.cornerRadius = 0.0
-      case .pending:
-        NSLayoutConstraint.activate(pendingStashConstraints)
-        stashedItemView.isHidden = true
-        navController.view.layer.cornerRadius = 10.0
-      case .stashed:
-        NSLayoutConstraint.activate(visibleStashConstraints)
-        stashedItemView.isHidden = false
-        navController.view.layer.cornerRadius = 10.0
-      }
-
-      self.rootView.layoutIfNeeded()
-    }
+    listViewController.cardStackViewController = self
   }
 
   let rootView: UIView = {
@@ -97,119 +30,45 @@ class RootViewController: UIViewController {
     return view
   }()
 
-  let stashedItemView: UIView = {
-    let view = UIView()
-    view.translatesAutoresizingMaskIntoConstraints = false
-
-    view.backgroundColor = .white
-    view.layer.cornerRadius = 10.0
-    view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-
-    return view
-  }()
-
-  let stashedItemLabel: UILabel = {
-    let label = UILabel()
-    label.translatesAutoresizingMaskIntoConstraints = false
-
-    return label
-  }()
-
-  @objc func didTapStashedItem() {
-    let itemViewController = ListItemViewController(item: stashedItem!)
-//    itemViewController.transitioningDelegate = stashTransitionDelegate
-    itemViewController.modalPresentationStyle = .custom
-    itemViewController.modalPresentationCapturesStatusBarAppearance = true
-    itemViewController.rootViewController = self
-
-    present(itemViewController, animated: true)
-  }
-
   override func loadView() {
-    addChildViewController(navController)
-    navController.view.translatesAutoresizingMaskIntoConstraints = false
-    rootView.addSubview(navController.view)
-    navController.didMove(toParentViewController: self)
-
-    stashedItemView.addSubview(stashedItemLabel)
-    rootView.addSubview(stashedItemView)
+    addChildViewController(listViewController)
+    listViewController.view.translatesAutoresizingMaskIntoConstraints = false
+    rootView.addSubview(listViewController.view)
+    listViewController.didMove(toParentViewController: self)
 
     NSLayoutConstraint.activate([
-      navController.view.topAnchor.constraint(equalTo: rootView.topAnchor),
-      navController.view.leftAnchor.constraint(equalTo: rootView.leftAnchor),
-      navController.view.rightAnchor.constraint(equalTo: rootView.rightAnchor),
+      listViewController.view.topAnchor.constraint(equalTo: rootView.topAnchor),
+      listViewController.view.leftAnchor.constraint(equalTo: rootView.leftAnchor),
+      listViewController.view.rightAnchor.constraint(equalTo: rootView.rightAnchor),
+      listViewController.view.bottomAnchor.constraint(equalTo: rootView.bottomAnchor),
     ])
-
-    NSLayoutConstraint.activate(noStashConstraints)
 
     view = rootView
   }
 
-  func showItem(at index: Int) {
-    let item: ListItem = ListItems.all[index]
-    showItem(item: item)
+  func push(_ viewController: CardViewController) {
+    viewController.transitioningDelegate = cardTransitionDelegate
+    viewController.modalPresentationStyle = .custom
+    viewController.modalPresentationCapturesStatusBarAppearance = true
+    viewController.cardStackViewController = self
+
+    topPresenter().present(viewController, animated: true)
   }
 
-  private func showItem(item: ListItem) {
-    let itemViewController = ListItemViewController(item: item)
-    itemViewController.modalPresentationCapturesStatusBarAppearance = true
-    itemViewController.modalPresentationStyle = .custom
-    itemViewController.transitioningDelegate = self.cardTransitionDelegate
-    itemViewController.rootViewController = self
-
-    var topmostVC: UIViewController = self
-    while (topmostVC.presentedViewController != nil) {
-      topmostVC = topmostVC.presentedViewController!
+  func pop() {
+    let presenter = topPresenter()
+    if let card = presenter.presentedViewController as? CardViewController {
+      card.cardStackViewController = nil
     }
 
-    topmostVC.present(
-      itemViewController,
-      animated: true,
-      completion: {
-        self.stashMode = .pending
-      }
-    )
+    presenter.dismiss(animated: true)
   }
 
-  func stash(item: ListItem) {
-    stashedItem = item
-
-    updateStash()
-    pop()
-  }
-
-  func dismiss(item: ListItem) {
-    if item.title == stashedItem?.title {
-      stashedItem = nil
-    }
-
-    updateStash()
-    pop()
-  }
-
-  private func pop() {
+  private func topPresenter() -> UIViewController {
     var topmostPresenter: UIViewController = self
     while (topmostPresenter.presentedViewController != nil) {
       topmostPresenter = topmostPresenter.presentedViewController!
     }
-
-    topmostPresenter.dismiss(animated: true)
-  }
-
-  func present(item: ListItem) {
-    showItem(item: item)
-  }
-
-  private func updateStash() {
-    stashedItemLabel.text = stashedItem?.title
-    if stashedItem != nil {
-      stashMode = .stashed
-    } else {
-      stashMode = .none
-    }
-  }
-
-  override func viewDidLoad() {
-    super.viewDidLoad()
+    return topmostPresenter
   }
 }

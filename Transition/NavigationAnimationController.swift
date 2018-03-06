@@ -16,7 +16,7 @@ class NavigationAnimationController: NSObject, UINavigationControllerDelegate {
     case .none:
       return nil
     case .pop:
-      return DismissalAnimator(presentationController: nil)
+      return DismissalAnimator()
     case .push:
       return PresentationAnimator()
     }

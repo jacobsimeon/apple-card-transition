@@ -57,7 +57,12 @@ class StashTransitioningDelegate: NSObject, UINavigationControllerDelegate {
 }
 
 class TransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {
-  var presentationController: PresentationController?
+  var presentationControllers: [PresentationController]
+
+  override init() {
+    presentationControllers = []
+    super.init()
+  }
 
   public func animationController(
     forPresented presented: UIViewController,
@@ -70,7 +75,7 @@ class TransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {
   public func animationController(
     forDismissed dismissed: UIViewController
   ) -> UIViewControllerAnimatedTransitioning? {
-    return DismissalAnimator(presentationController: presentationController)
+    return DismissalAnimator()
   }
 
   func presentationController(
@@ -78,12 +83,20 @@ class TransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {
     presenting: UIViewController?,
     source: UIViewController
   ) -> UIPresentationController? {
-    presentationController = PresentationController(
+    let newPresentationController = PresentationController(
       presentedViewController: presented,
       presenting: presenting
     )
 
-    return presentationController
+    newPresentationController.parent = presentationControllers.last
+    newPresentationController.transitioningDelegate = self
+    presentationControllers.append(newPresentationController)
+
+    return newPresentationController
+  }
+
+  func cleanup(presentationController: PresentationController) {
+    presentationControllers.remove(at: presentationControllers.index(of: presentationController)!)
   }
 
   /*

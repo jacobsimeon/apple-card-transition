@@ -21,14 +21,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   ) -> Bool {
     window = UIWindow()
 
-    let navController = UINavigationController(
-      rootViewController: ListViewController(items: ListItems.all)
-    )
-    navController.navigationBar.prefersLargeTitles = true
-    navController.transitioningDelegate = transitioningDelegate
-    navController.delegate = animationController
-
-    window?.rootViewController = navController
+    let rootViewController = RootViewController()
+    window?.rootViewController = rootViewController
     window?.makeKeyAndVisible()
 
     return true

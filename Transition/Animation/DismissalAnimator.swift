@@ -6,15 +6,8 @@
 import UIKit
 
 class DismissalAnimator: NSObject, UIViewControllerAnimatedTransitioning {
-  private var presentationController: PresentationController?
-
-  init(presentationController: PresentationController?) {
-    self.presentationController = presentationController
-    super.init()
-  }
-
   func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-    return 0.25
+    return 0.250
   }
 
   func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
@@ -31,17 +24,9 @@ class DismissalAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 
     let duration = transitionDuration(using: transitionContext)
 
-    var height = returningToView.frame.height
-
-
-    if let root = returningToViewController as? RootViewController {
-      height = root.navController.view.frame.height + 4
-    }
-
-    presentationController?.updateSnapshot()
     let dismissedViewFinalFrame = CGRect(
       x: 0.0,
-      y: height,
+      y: returningToView.frame.height,
       width: returningToView.frame.size.width,
       height: returningToView.frame.size.height
     )
@@ -58,7 +43,7 @@ class DismissalAnimator: NSObject, UIViewControllerAnimatedTransitioning {
           width: returningToView.frame.width,
           height: returningToView.frame.height
         )
-        returningToView.layer.cornerRadius = 0.0
+//        returningToView.layer.cornerRadius = 0.0
         returningToView.frame = onscreen
 
         transitionContext.completeTransition(!transitionContext.transitionWasCancelled)

@@ -5,7 +5,7 @@
 
 import UIKit
 
-class ListViewController: UIViewController {
+class ListViewController: CardViewController {
   private let items: [ListItem]
   private let cardTransitioningDelegate = TransitioningDelegate()
   weak var rootViewController: RootViewController?
@@ -74,10 +74,7 @@ extension ListViewController: UICollectionViewDataSource {
 extension ListViewController: UICollectionViewDelegate {
   func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
     let listItemVC = ListItemViewController(item: items[indexPath.item])
-    listItemVC.transitioningDelegate = cardTransitioningDelegate
-    listItemVC.modalPresentationStyle = .custom
-    navigationController?.pushViewController(listItemVC, animated: true)
-//    rootViewController?.showItem(at: indexPath.item)
+    cardStackViewController?.push(listItemVC)
   }
 }
 

@@ -13,7 +13,7 @@ class PresentationAnimator: NSObject, UIViewControllerAnimatedTransitioning {
   }
 
   func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-    return 1.0
+    return 0.325
   }
 
   func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
@@ -24,74 +24,55 @@ class PresentationAnimator: NSObject, UIViewControllerAnimatedTransitioning {
       return
     }
 
-    guard let fromVC = transitionContext.viewController(forKey: .from) else {
-      print("Unable to gather fromView, returning")
-      return
-    }
+    let fromVC = transitionContext.viewController(forKey: .from)!
+    transitionContext.initialFrame(for: fromVC)
 
-    let toView = toVC.view!
-    let fromView = fromVC.view!
+    let toFinalFrame = transitionContext.finalFrame(for: toVC)
 
-    let containerFrame = containerView.frame
-    var toStartFrame = calculateStartingFrame(
-      transitionContext: transitionContext,
-      toVC: toVC,
-      containerFrame: containerFrame
+    containerView.addSubview(toVC.view)
+    toVC.view.frame = CGRect(
+      x: containerView.frame.minX,
+      y: containerView.frame.maxY,
+      width: toFinalFrame.width,
+      height: toFinalFrame.height
     )
 
-    if let from = fromVC as? RootViewController {
-      toStartFrame.origin.y = from.navController.view.frame.height + 4
-    }
-
-    var toFinalFrame = transitionContext.finalFrame(for: toVC)
-    toFinalFrame.origin.y = 44.0
-
-    containerView.addSubview(toView)
-    toView.frame = toStartFrame
-
-    toView.layer.cornerRadius = 10.0
-    toView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-//    moveOffscreen(fromView: fromView, containerView: containerView)
+    moveOffscreen(fromVC.view)
+    fromVC.view.layer.cornerRadius = 3.0
+    toVC.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
     let duration = transitionDuration(using: transitionContext)
     UIView.animate(
       withDuration: duration,
       animations: {
-        toView.frame = toFinalFrame
+        toVC.view.frame = toFinalFrame
+        toVC.view.layer.cornerRadius = 3.0
+        toVC.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        toVC.view.layer.shadowColor = UIColor.black.cgColor
+        toVC.view.layer.shadowRadius = 2.0
+        toVC.view.layer.shadowOpacity = 1.0
+        toVC.view.layer.shadowOffset = .zero
       },
       completion: { _ in
         if (transitionContext.transitionWasCancelled) {
-          toView.removeFromSuperview()
+          toVC.view.removeFromSuperview()
         }
 
         transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
       }
     )
-
   }
 
-  private func calculateStartingFrame(
-    transitionContext: UIViewControllerContextTransitioning,
-    toVC: UIViewController,
-    containerFrame: CGRect
-  ) -> CGRect {
-    var toStartFrame = transitionContext.initialFrame(for: toVC)
-    toStartFrame.size.width = containerFrame.width
-    toStartFrame.size.height = containerFrame.height
-    toStartFrame.origin.x = 0.0
-    toStartFrame.origin.y = containerFrame.size.height - startingFrameOriginYOffset
-    return toStartFrame
-  }
-
-  private func moveOffscreen(fromView: UIView, containerView: UIView) {
+  private func moveOffscreen(_ view: UIView) {
     let offscreen = CGRect(
-      x: UIScreen.main.bounds.minX + UIScreen.main.bounds.width,
-      y: fromView.frame.minY,
-      width: fromView.frame.width,
-      height: fromView.frame.height
+      x: UIScreen.main.bounds.maxX,
+      y: view.frame.minY,
+      width: view.frame.width,
+      height: view.frame.height
     )
 
-    // move fromView offscreen so we can snapshot it later
-    fromView.frame = offscreen
+    view.layer.shadowColor = UIColor.gray.cgColor
+    view.layer.shadowRadius = 10.0
+    view.frame = offscreen
   }
 }
